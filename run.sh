@@ -13,11 +13,23 @@ if [ "${BACKEND_PORTS}" = "**None**" ]; then
 fi
 
 if [ -n "$SSL_CERT" ]; then
-    echo "SSL certificate provided!"
-    echo -e "${SSL_CERT}" > /servercert.pem
-    export SSL="ssl crt /servercert.pem"
+    echo "default SSL certificate provided!"
+    mkdir /ssl
+    # this certificate MUST be before any others
+    echo -e "${SSL_CERT}" > /ssl/default.pem 
+    export SSL="ssl crt /ssl"
 else
-    echo "No SSL certificate provided"
+    echo "No default SSL certificate provided"
 fi
 
-exec python /app/haproxy.py 
+if [ -n "$EXTRA_CERT_LIST" ]; then
+  for cert in $EXTRA_CERT_LIST; do
+    var_name="$`echo $cert`"
+    cert_body=`eval echo $var_name`
+    echo -e "${cert_body}" > /ssl/extra_${cert}.pem
+  done
+else
+  echo "No extra certificates provided"
+fi
+
+exec python /app/haproxy.py
