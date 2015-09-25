@@ -16,8 +16,13 @@ if [ -n "$SSL_CERT" ]; then
     echo "default SSL certificate provided!"
     mkdir /ssl
     # this certificate MUST be before any others
-    echo -e "${SSL_CERT}" > /ssl/default.pem 
-    export SSL="ssl crt /ssl"
+    echo -e "${SSL_CERT}" > /ssl/default.pem
+
+    if [ "$PROXY_PROTOCOL" = true ]; then
+        export SSL="accept-proxy ssl crt /ssl"
+    else
+        export SSL="ssl crt /ssl"
+    fi
 else
     echo "No default SSL certificate provided"
 fi
