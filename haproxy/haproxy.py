@@ -34,6 +34,7 @@ class Haproxy(object):
     envvar_http_basic_auth = os.getenv("HTTP_BASIC_AUTH")
     envvar_monitor_uri = os.getenv("MONITOR_URI", "/ping")
     envvar_monitor_port = os.getenv("MONITOR_PORT", "80")
+    envvar_proxy_protocol = bool(os.getenv("PROXY_PROTOCOL", "False"))
 
     # envvar overwritable
     envvar_balance = os.getenv("BALANCE", "roundrobin")
@@ -146,6 +147,8 @@ class Haproxy(object):
             cacerts.append(self.envvar_default_ca_cert)
         certs.extend(self.specs.get_default_ssl_cert())
         certs.extend(self.specs.get_ssl_cert())
+        if self.envvar_proxy_protocol:
+            self.ssl = "accept-proxy "
         if certs:
             if set(certs) != set(Haproxy.cls_certs):
                 Haproxy.cls_certs = copy.copy(certs)
@@ -226,7 +229,7 @@ class Haproxy(object):
                                "stats uri /",
                                "stats auth %s" % cls.envvar_stats_auth]
 
-        cfg["frontend monitor"] = ["bind %s" % cls.envvar_monitor_port, "monitor-uri %s" % cls.envvar_monitor_uri]
+        cfg["frontend monitor"] = ["bind :%s" % cls.envvar_monitor_port, "monitor-uri %s" % cls.envvar_monitor_uri]
 
         for opt in cls.envvar_option:
             if opt:
