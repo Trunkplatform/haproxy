@@ -12,7 +12,7 @@ Tag
     tutum/haproxy:latest    github branch master
     tutum/haproxy:0.2       github branch master
     tutum/haproxy:0.1       github tag 0.1
-    
+
 Usage
 -----
 
@@ -66,7 +66,7 @@ Settings in this part is immutable, you have to redeploy HAProxy service to make
 |EXTRA_BIND_SETTINGS|<empty>|comma-separated string(<port>:<setting>) of extra settings, and each part will be appended to the related port bind section in the configuration file. To escape comma, use `\,`. Possible vaule: `443:accept-proxy, 80:name http`|
 |HTTP_BASIC_AUTH|<empty>|a comma-separated list of credentials(`<user>:<pass>`) for HTTP basic auth, which applies to all the backend routes. To escape comma, use `\,`. *Attention:* DO NOT rely on this for authentication in production|
 |CA_CERT|<empty>|CA cert for haproxy to verify the client. Use the same format as `DEFAULT_SSL_CERT`|
-|PROXY_PROTOCOL|False|Enables `accept-proxy` when set to `True`, see [haproxy-aws](https://github.com/jvehent/haproxy-aws)|
+|PROXY_PROTOCOL|False|Enables [HAProxy:accept-proxy](http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#5.1-accept-proxy) when set to `True`. Useful for setups such as [haproxy-aws](https://github.com/jvehent/haproxy-aws)|
 
 ###Settings in linked application services###
 
