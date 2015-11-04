@@ -13,20 +13,6 @@ Tag
     tutum/haproxy:0.2       github branch master
     tutum/haproxy:0.1       github tag 0.1
 
-Update
------
-
-If you'd like to use multiple ssl certificates, you need to specify each one of them in it's own environment variable, like so:
-CERT1="<cert-body>"
-CERT2="<cert-body2>"
-... etc
-
-also, in order for the above to take effect, you need to specify a variable called EXTRA_CERT_LIST that has all the above variable names separated by a space, like so:
-EXTRA_CERT_LIST="CERT1 CERT2 CERT3"
-
-This is making use of haproxy's support for multiple certificates in the same folder, where SSL_CERT is used as default
-
-
 Usage
 -----
 
@@ -83,6 +69,7 @@ Settings in this part is immutable, you have to redeploy HAProxy service to make
 |CA_CERT|<empty>|CA cert for haproxy to verify the client. Use the same format as `DEFAULT_SSL_CERT`|
 |MONITOR_URI|/ping|uri to use for [HAProxy:monitor-uri](http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#4-monitor-uri)|
 |MONITOR_PORT|80|port to use for [HAProxy:monitor-uri](http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#4-monitor-uri)|
+|PROXY_PROTOCOL|False|Enables [HAProxy:accept-proxy](http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#5.1-accept-proxy) when set to `True`. Useful for setups such as [haproxy-aws](https://github.com/jvehent/haproxy-aws)|
 
 ###Settings in linked application services###
 
