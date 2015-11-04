@@ -145,8 +145,6 @@ class Haproxy(object):
             cacerts.append(self.envvar_default_ca_cert)
         certs.extend(self.specs.get_default_ssl_cert())
         certs.extend(self.specs.get_ssl_cert())
-        if self.envvar_proxy_protocol:
-            self.ssl = "accept-proxy "
         if certs:
             if set(certs) != set(Haproxy.cls_certs):
                 Haproxy.cls_certs = copy.copy(certs)
