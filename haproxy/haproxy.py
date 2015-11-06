@@ -35,7 +35,7 @@ class Haproxy(object):
     envvar_http_basic_auth = os.getenv("HTTP_BASIC_AUTH")
     envvar_monitor_uri = os.getenv("MONITOR_URI", "/ping")
     envvar_monitor_port = os.getenv("MONITOR_PORT", "80")
-    envvar_proxy_protocol = os.getenv("PROXY_PROTOCOL").upper() == "TRUE"
+    envvar_proxy_protocol = os.getenv("PROXY_PROTOCOL")
 
     # envvar overwritable
     envvar_balance = os.getenv("BALANCE", "roundrobin")
@@ -154,7 +154,11 @@ class Haproxy(object):
                 Haproxy.cls_certs = copy.copy(certs)
                 self.ssl_updated = True
                 self._save_certs(certs)
-            self.ssl = "accept-proxy ssl crt /certs/" if self.envvar_proxy_protocol else "ssl crt /certs/"
+
+            self.ssl = "accept-proxy ssl crt /certs/" \
+                if self.envvar_proxy_protocol and self.envvar_proxy_protocol.upper() == "TRUE" \
+                else "ssl crt /certs/"
+
         if cacerts:
             if set(cacerts) != set(Haproxy.cls_certs):
                 Haproxy.cls_certs = copy.copy(cacerts)
