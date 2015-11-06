@@ -226,7 +226,9 @@ class Haproxy(object):
                                "stats uri /",
                                "stats auth %s" % cls.envvar_stats_auth]
 
-        cfg["frontend monitor"] = ["bind :%s" % cls.envvar_monitor_port, "monitor-uri %s" % cls.envvar_monitor_uri]
+        cfg["frontend monitor"] = ["bind :%s" % cls.envvar_monitor_port,
+                                   "mode http",
+                                   "monitor-uri %s" % cls.envvar_monitor_uri]
 
         for opt in cls.envvar_option:
             if opt:
