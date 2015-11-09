@@ -226,8 +226,6 @@ class Haproxy(object):
                                "stats uri /",
                                "stats auth %s" % cls.envvar_stats_auth]
 
-        cfg["frontend monitor"] = ["bind :%s" % cls.envvar_monitor_port, "monitor-uri %s" % cls.envvar_monitor_uri]
-
         for opt in cls.envvar_option:
             if opt:
                 cfg["defaults"].append("option %s" % opt.strip())
@@ -330,6 +328,7 @@ class Haproxy(object):
         if self.specs.get_vhosts():
             frontends_dict = {}
             rule_counter = 0
+            monitor_set = False
             for vhost in self.specs.get_vhosts():
                 rule_counter += 1
                 port = vhost["port"]
@@ -349,10 +348,14 @@ class Haproxy(object):
                         bind = " ".join([bind.strip(), self.ssl])
 
                     frontends_dict[port] = ["bind :%s" % bind]
+                    if port == self.envvar_monitor_port:
+                        frontends_dict[port].append("monitor-uri %s" % self.envvar_monitor_uri)
+                        monitor_set = True
+
+                    # add websocket acl rule
                     if ssl:
                         frontends_dict[port].append("reqadd X-Forwarded-Proto:\ https")
 
-                    # add websocket acl rule
                     frontends_dict[port].append("acl is_websocket hdr(Upgrade) -i WebSocket")
 
                 acl_rule = []
@@ -400,6 +403,9 @@ class Haproxy(object):
                     acl_rule.append(use_backend)
                     frontends_dict[port].extend(acl_rule)
 
+            if not monitor_set:
+                frontends_dict[self.envvar_monitor_port] = ["bind :%s" % self.envvar_monitor_port, "monitor-uri %s" % self.envvar_monitor_uri]
+
             for port, frontend in frontends_dict.iteritems():
                 cfg["frontend port_%s" % port] = frontend
 
@@ -412,6 +418,7 @@ class Haproxy(object):
 
             if self.require_default_route:
                 frontend = [("bind :80 %s" % self.extra_bind_settings.get('80', "")).strip()]
+                frontend.append("monitor-uri %s" % self.envvar_monitor_uri)
                 if self.ssl and self:
                     frontend.append(
                         ("bind :443 %s %s" % (self.ssl, self.extra_bind_settings.get('443', ""))).strip())
