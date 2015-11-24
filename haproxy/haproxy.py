@@ -33,10 +33,10 @@ class Haproxy(object):
     envvar_extra_default_settings = os.getenv("EXTRA_DEFAULT_SETTINGS")
     envvar_extra_bind_settings = os.getenv("EXTRA_BIND_SETTINGS")
     envvar_http_basic_auth = os.getenv("HTTP_BASIC_AUTH")
-    envvar_monitor_uri = os.getenv("MONITOR_URI", "/ping")
-    envvar_monitor_port = os.getenv("MONITOR_PORT", "80")
+    envvar_monitor_uri = os.getenv("MONITOR_URI")
+    envvar_monitor_port = os.getenv("MONITOR_PORT")
     envvar_proxy_protocol = os.getenv("PROXY_PROTOCOL")
-
+    
     # envvar overwritable
     envvar_balance = os.getenv("BALANCE", "roundrobin")
 
@@ -338,11 +338,11 @@ class Haproxy(object):
         return cfgs
 
     def _config_frontend(self):
+        monitor_uri_configured = False
         cfg = OrderedDict()
         if self.specs.get_vhosts():
             frontends_dict = {}
             rule_counter = 0
-            monitor_set = False
             for vhost in self.specs.get_vhosts():
                 rule_counter += 1
                 port = vhost["port"]
@@ -362,15 +362,16 @@ class Haproxy(object):
                         bind = " ".join([bind.strip(), self.ssl])
 
                     frontends_dict[port] = ["bind :%s" % bind]
-                    if port == self.envvar_monitor_port:
-                        frontends_dict[port].append("monitor-uri %s" % self.envvar_monitor_uri)
-                        monitor_set = True
-
-                    # add websocket acl rule
                     if ssl:
                         frontends_dict[port].append("reqadd X-Forwarded-Proto:\ https")
 
+                    # add websocket acl rule
                     frontends_dict[port].append("acl is_websocket hdr(Upgrade) -i WebSocket")
+
+                    # add monitor uri
+                    if port == Haproxy.envvar_monitor_port and Haproxy.envvar_monitor_uri:
+                        frontends_dict[port].append("monitor-uri %s" % Haproxy.envvar_monitor_uri)
+                        monitor_uri_configured = True
 
                 acl_rule = []
                 # calculate virtual host rule
@@ -417,9 +418,6 @@ class Haproxy(object):
                     acl_rule.append(use_backend)
                     frontends_dict[port].extend(acl_rule)
 
-            if not monitor_set:
-                frontends_dict[self.envvar_monitor_port] = ["bind :%s" % self.envvar_monitor_port, "monitor-uri %s" % self.envvar_monitor_uri]
-
             for port, frontend in frontends_dict.iteritems():
                 cfg["frontend port_%s" % port] = frontend
 
@@ -432,13 +430,22 @@ class Haproxy(object):
 
             if self.require_default_route:
                 frontend = [("bind :80 %s" % self.extra_bind_settings.get('80', "")).strip()]
-                frontend.append("monitor-uri %s" % self.envvar_monitor_uri)
                 if self.ssl and self:
                     frontend.append(
                         ("bind :443 %s %s" % (self.ssl, self.extra_bind_settings.get('443', ""))).strip())
                     frontend.append("reqadd X-Forwarded-Proto:\ https")
+
+                if Haproxy.envvar_monitor_uri and (
+                        Haproxy.envvar_monitor_port == '80' or Haproxy.envvar_monitor_port == '443'):
+                    frontend.append("monitor-uri %s" % Haproxy.envvar_monitor_uri)
+                    monitor_uri_configured = True
+
                 frontend.append("default_backend default_service")
                 cfg["frontend default_frontend"] = frontend
+
+        if not monitor_uri_configured and Haproxy.envvar_monitor_port and Haproxy.envvar_monitor_uri:
+            cfg["frontend monitor"] = ["bind :%s" % Haproxy.envvar_monitor_port,
+                                       "monitor-uri %s" % Haproxy.envvar_monitor_uri]
 
         return cfg
 
