@@ -2,7 +2,7 @@ import logging
 import os
 import sys
 import signal
-
+import json
 import tutum
 
 from haproxy import Haproxy
@@ -37,20 +37,25 @@ def tutum_event_handler(event):
 
     # Add/remove services linked to haproxy
     if event.get("state", "") == "Success" and Haproxy.cls_service_uri in event.get("parents", []):
-        service = Haproxy.fetch_tutum_obj(Haproxy.cls_service_uri)
-        service_endpoints = [srv.get("to_service") for srv in service.linked_to_service]
-        if Haproxy.cls_linked_services != service_endpoints:
-            services_unlinked = ", ".join([parse_uuid_from_resource_uri(uri) for uri in
-                                           set(Haproxy.cls_linked_services) - set(service_endpoints)])
-            services_linked = ", ".join([parse_uuid_from_resource_uri(uri) for uri in
-                                         set(service_endpoints) - set(Haproxy.cls_linked_services)])
-            msg = "Tutum event:"
-            if services_unlinked:
-                msg += " service %s is unlinked from HAProxy" % services_unlinked
-            if services_linked:
-                msg += " service %s is linked to HAProxy" % services_linked
+        event_action = Haproxy.fetch_tutum_obj(event.get("resource_uri"))
+        if event_action.action == "Service Update":
+            action_body = json.loads(event_action.body)
+            action_endpoints = [srv.get("to_service") for srv in action_body["linked_to_service"]]
+            logger.debug("action_endpoints %s" % action_endpoints)
+            logger.debug("cls_linked_services %s" % Haproxy.cls_linked_services)
 
-            run_haproxy(msg)
+            if Haproxy.cls_linked_services != action_endpoints:
+                services_unlinked = ", ".join([parse_uuid_from_resource_uri(uri) for uri in
+                                               set(Haproxy.cls_linked_services) - set(action_endpoints)])
+                services_linked = ", ".join([parse_uuid_from_resource_uri(uri) for uri in
+                                             set(action_endpoints) - set(Haproxy.cls_linked_services)])
+                msg = "Tutum event:"
+                if services_unlinked:
+                    msg += " service %s is unlinked from HAProxy" % services_unlinked
+                if services_linked:
+                    msg += " service %s is linked to HAProxy" % services_linked
+
+                run_haproxy(msg)
 
 
 def create_pid_file():
