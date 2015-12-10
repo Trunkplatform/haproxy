@@ -41,9 +41,6 @@ def tutum_event_handler(event):
         if event_action.action == "Service Update":
             action_body = json.loads(event_action.body)
             action_endpoints = [srv.get("to_service") for srv in action_body["linked_to_service"]]
-            logger.debug("action_endpoints %s" % action_endpoints)
-            logger.debug("cls_linked_services %s" % Haproxy.cls_linked_services)
-
             if Haproxy.cls_linked_services != action_endpoints:
                 services_unlinked = ", ".join([parse_uuid_from_resource_uri(uri) for uri in
                                                set(Haproxy.cls_linked_services) - set(action_endpoints)])
@@ -56,6 +53,8 @@ def tutum_event_handler(event):
                     msg += " service %s is linked to HAProxy" % services_linked
 
                 run_haproxy(msg)
+            else:
+                logger.info("Service Links unchanged from update: %s" % action_endpoints)
 
 
 def create_pid_file():
