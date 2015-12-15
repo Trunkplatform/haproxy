@@ -2,9 +2,11 @@ import logging
 import os
 import sys
 import signal
+import threading
 
 import tutum
 
+from flask import Flask
 from haproxy import Haproxy
 from parser import parse_uuid_from_resource_uri
 
@@ -16,6 +18,7 @@ PIDFILE = "/tmp/tutum-haproxy.pid"
 
 logger = logging.getLogger("haproxy")
 
+api = Flask(__name__)
 
 def run_haproxy(msg=None):
     logger.info("==========BEGIN==========")
@@ -65,6 +68,20 @@ def create_pid_file():
 def user_reload_haproxy(signum, frame):
     run_haproxy("User reload")
 
+def api_server():
+    thread = threading.Thread(target=api.run, args=('0.0.0.0', '5000'))
+    thread.daemon = True
+    thread.start()
+    logger.info("started Flask API Server")
+
+@api.route("/admin/ping")
+def ping():
+    return "pong"
+
+@api.route("/admin/reload")
+def reload():
+    run_haproxy("API reload")
+    return "initiated User reload"
 
 def main():
     logging.basicConfig(stream=sys.stdout)
@@ -73,6 +90,8 @@ def main():
     pid = create_pid_file()
     signal.signal(signal.SIGUSR1, user_reload_haproxy)
     signal.signal(signal.SIGTERM, sys.exit)
+
+    api_server()
 
     if Haproxy.cls_container_uri and Haproxy.cls_service_uri:
         if Haproxy.cls_tutum_auth:

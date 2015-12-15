@@ -8,7 +8,7 @@ RUN echo 'deb http://ppa.launchpad.net/vbernat/haproxy-1.5/ubuntu trusty main' >
     apt-get update && \
     apt-get install -y --no-install-recommends haproxy python-pip && \
     apt-get clean && \
-    pip install python-tutum==0.16.21 && \
+    pip install python-tutum==0.16.21 flask && \
     rm -rf /var/lib/apt/lists/* && \
     echo '#!/bin/sh' > /reload.sh && \
     echo 'kill -USR1 $(cat /tmp/tutum-haproxy.pid)' >> /reload.sh && \
@@ -29,5 +29,5 @@ ENV RSYSLOG_DESTINATION=127.0.0.1 \
 # Add scripts
 ADD haproxy /haproxy
 
-EXPOSE 80 443 1936
+EXPOSE 80 443 1936 5000
 CMD ["python", "/haproxy/main.py"]
