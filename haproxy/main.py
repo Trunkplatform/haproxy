@@ -72,16 +72,16 @@ def api_server():
     thread = threading.Thread(target=api.run, args=('0.0.0.0', '5000'))
     thread.daemon = True
     thread.start()
-    logger.info("started Flask API Server")
+    logger.info("started API Server")
 
-@api.route("/admin/ping")
+@api.route("/main/ping")
 def ping():
-    return "pong"
+    return "pong", 200
 
-@api.route("/admin/reload")
+@api.route("/main/reload")
 def reload():
     run_haproxy("API reload")
-    return "initiated User reload"
+    return "initiated User reload", 200
 
 def main():
     logging.basicConfig(stream=sys.stdout)

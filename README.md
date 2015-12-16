@@ -362,5 +362,6 @@ In most cases, `tutum/haproxy` will configure itself automatically when the link
 
 * `docker exec <haproxy_id> /reload.sh`, if you are on the node where tutum/haproxy deploys
 * `tutum exec <haproxy_uuid> /reload.sh`, if you use tutum cli
+* `GET http://<haproxy_host>:5000/main/ping`, if you use restful api
 
 Note: when `reload.sh` is invoked, it doesn't necessarily mean that HAProxy will be restarted. In fact, `tutum/haproxy` will try to get the current information of the the service and calculate a new configuration. HAProxy will only be restarted when the newly generated configuration differs from the current one.
